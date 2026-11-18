@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Sales Forecast</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 420px;
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #34495e;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #8a100b; /* Boston College Maroon */
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #6b0c08;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Car Sales Forecaster</h2>
+    <p style="text-align: center; color: #666; font-size: 14px;">Enter the last 6 months of car sales to predict next month.</p>
+    
+    <form id="salesForm">
+        <div class="form-group">
+            <label for="m1">Month 1 Sales (6 months ago):</label>
+            <input type="number" step="any" min="0" id="m1" placeholder="e.g. 15000" required>
+        </div>
+        <div class="form-group">
+            <label for="m2">Month 2 Sales (5 months ago):</label>
+            <input type="number" step="any" min="0" id="m2" placeholder="e.g. 16200" required>
+        </div>
+        <div class="form-group">
+            <label for="m3">Month 3 Sales (4 months ago):</label>
+            <input type="number" step="any" min="0" id="m3" placeholder="e.g. 15800" required>
+        </div>
+        <div class="form-group">
+            <label for="m4">Month 4 Sales (3 months ago):</label>
+            <input type="number" step="any" min="0" id="m4" placeholder="e.g. 17100" required>
+        </div>
+        <div class="form-group">
+            <label for="m5">Month 5 Sales (2 months ago):</label>
+            <input type="number" step="any" min="0" id="m5" placeholder="e.g. 16900" required>
+        </div>
+        <div class="form-group">
+            <label for="m6">Month 6 Sales (Last month):</label>
+            <input type="number" step="any" min="0" id="m6" placeholder="e.g. 18000" required>
+        </div>
+        <button type="submit">Predict Next Month's Sales</button>
+    </form>
+
+    <div id="result"></div>
+</div>
+
+<script>
+    document.getElementById("salesForm").addEventListener("submit", async function(event) {
+        event.preventDefault(); // Stops the page from refreshing
+
+        const resultDiv = document.getElementById("result");
+        resultDiv.style.display = "block";
+        resultDiv.className = "";
+        resultDiv.innerText = "Calculating prediction...";
+
+        // Gather the 6 numbers from the form
+        const salesValues = [
+            parseFloat(document.getElementById("m1").value),
+            parseFloat(document.getElementById("m2").value),
+            parseFloat(document.getElementById("m3").value),
+            parseFloat(document.getElementById("m4").value),
+            parseFloat(document.getElementById("m5").value),
+            parseFloat(document.getElementById("m6").value)
+        ];
+
+        try {
+            // Send the data to your FastAPI /predict route
+            const response = await fetch("/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                // IMPORTANT: Make sure "sales" matches the variable name in your app.py!
+                body: JSON.stringify({ sales: salesValues })
+            });
+
+            if (!response.ok) {
+                throw new Error("Server returned an error");
+            }
+
+            const data = await response.json();
+            
+            // Display the returned prediction
+            const predictedValue = data.prediction ?? Object.values(data)[0];
+            resultDiv.className = "success";
+            resultDiv.innerText = "Predicted Sales: " + Number(predictedValue).toLocaleString(undefined, {maximumFractionDigits: 2});
+        } catch (error) {
+            resultDiv.className = "error";
+            resultDiv.innerText = "Error getting prediction. Check your backend connection.";
+            console.error(error);
+        }
+    });
+</script>
+
+</body>
+</html>
